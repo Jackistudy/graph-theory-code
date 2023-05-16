@@ -1,10 +1,9 @@
 #import math
 import os
 from ase.io import read
-from struc_to_graph import atom_to_graph
-from default_func import get_neighbor_list
+from basic_func import get_neighbor_list,atom_to_graph
 
-def judge_smx_connect(path):
+def judge_smx_connect(path): #判断界面上的分子是否分解，也可通过图连通性判断分解
     count=0
     for file_1 in os.listdir(path):  
         try:      
@@ -28,8 +27,8 @@ def judge_smx_connect(path):
                         ad_list.append(index)
             #print(file_1,ad_list)
             neighbor_list = get_neighbor_list(atoms,0.001,1.25)
-            full,cpmpare_graph,reduce_full,ad_chem1=atom_to_graph(atoms,neighbor_list,grid=(0,0,0),adsorbate_atoms=ad_list)  #全图的生成在边界上会出现重复的问题，这种重复具有不同oxoyoz
-            #full,ad_chem1=atom_to_graph(atoms,neighbor_list,adsorbate_atoms=ad_list)
+            #full,cpmpare_graph,reduce_full,ad_chem1=atom_to_graph(atoms,neighbor_list,grid=(0,0,0),adsorbate_atoms=ad_list)  
+            full,ad_chem1=atom_to_graph(atoms,neighbor_list,adsorbate_atoms=ad_list)
             if len(ad_chem1)!=1:
                 print("{} is not connected ".format(file_1))
                 os.chdir(path)
@@ -41,8 +40,8 @@ def judge_smx_connect(path):
                     if atom.symbol =="O" or atom.symbol =="N" :
                         ad_list.append(index)
             neighbor_list = get_neighbor_list(atoms,0.001,1.25)
-            #full,ad_chem1=atom_to_graph(atoms,neighbor_list,adsorbate_atoms=ad_list)  
-            full,cpmpare_graph,reduce_full,ad_chem1=atom_to_graph(atoms,neighbor_list,grid=(0,0,0),adsorbate_atoms=ad_list)
+            full,ad_chem1=atom_to_graph(atoms,neighbor_list,adsorbate_atoms=ad_list)  
+            #full,cpmpare_graph,reduce_full,ad_chem1=atom_to_graph(atoms,neighbor_list,grid=(0,0,0),adsorbate_atoms=ad_list)
             if len(ad_chem1)!=1:
                 print("{} is not connected ".format(file_1))
                 os.chdir(path)

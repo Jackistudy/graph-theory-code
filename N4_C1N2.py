@@ -1,17 +1,16 @@
+#get all C1N2 configurations
+
 import os
-from re import S
-from creat_ad_structure import get_double_bond_atom,get_cross_bond_atom,get_single_bond_atom
-from creat_ad_structure import single_ad_structure,double_ad_structure,double_cross_ad_structure
-from get_bond_order import get_smx_bond_order
+from bulid_ad_molecule import ad_modes
+from bulid_ad_molecule import geometry_rules
 import numpy as np
 from ase.io import read,write
 import numpy as np
 import networkx as nx
 from rdkit import Chem
-#from package.structure_to_graph import atom_to_graph
-from struc_to_graph import atom_to_graph
+#from struc_to_graph import atom_to_graph
 import networkx.algorithms.isomorphism as iso
-from default_func import get_neighbor_list,smile_to_graph,smile_to_formula,get_tri_inter_central
+from basic_func import get_neighbor_list,smile_to_graph,smile_to_formula,atom_to_graph
 #from ase.data import covalent_radii
 
 obpath='/home/obpath'
@@ -19,7 +18,7 @@ obpath='/home/obpath'
 slab=read('/home/CONTCAR')
 smile_file = "/home/smile_file.txt"  
 
-site=[47,48]
+site=[47,48]   #N的序号和Cu的序号
 
 def compare_graph(compare_structure,tmp):   #图同构判断
     flag = 1
@@ -43,7 +42,7 @@ total_count=0
 #smiles = ["NC([H])(O)N([H])O"]
 
 smiles=[]
-f = open(smile_file,'r')      #读取txt里面的所有中间产物
+f = open(smile_file,'r')      #读取txt里面的所有用SMILES表示的中间产物
 for line in f.readlines():
     line=line.strip('\n')
     smiles.append(line)
@@ -66,49 +65,49 @@ for file in smiles:
     formula=smile_to_formula(file)  #smile转化为“分子式”，用于文件命名
     #if not os.path.exists(obpath + "/" +formula ):
     #    os.mkdir(obpath + "/" + formula)
-    single_site=get_single_bond_atom(mol)
-    double_site=get_double_bond_atom(mol)
-    double_cross_site=get_cross_bond_atom(mol)
+    single_site=ad_modes.single_bond_index(mol)
+    double_site=ad_modes.double_bond_index(mol)
+    double_cross_site=ad_modes.cross_bond_index(mol)
     
     
     for j in single_site:  #位点1
-            flag=get_smx_bond_order(mol,mole_bond_atom=[j])
-            if flag==1:
-                tmp1=single_ad_structure(slab,mol,ad_site=[site[0]],mole_bond_atom=[j])
+            flag = geometry_rules.judge_bond_order(mol,mole_bond_atom=[j])
+            if flag == 1:
+                tmp1 = geometry_rules.single_ad_structure(slab,mol,ad_site=[site[0]],mole_bond_index=[j])
                 #if compare_graph(compare_structure,tmp1):
                 structure.append(tmp1) 
                 N_num+=1
-    for j in single_site:  #位点1
-            flag=get_smx_bond_order(mol,mole_bond_atom=[j])
-            if flag==1:
-                tmp2=single_ad_structure(slab,mol,ad_site=[site[1]],mole_bond_atom=[j])   
+    for j in single_site:  #位点2
+            flag = geometry_rules.judge_bond_order(mol,mole_bond_atom=[j])
+            if flag == 1:
+                tmp2 = geometry_rules.single_ad_structure(slab,mol,ad_site=[site[1]],mole_bond_index=[j])   
                 #if compare_graph(compare_structure,tmp2):
                 structure.append(tmp2)
                 Cu_num+=1  
                           
     for j in single_site: #桥位
-            flag=get_smx_bond_order(mol,mole_bond_atom=[j],bond_to_basis=2)
-            if flag==1:
-                tmp=single_ad_structure(slab,mol,ad_site=site,mole_bond_atom=[j])    
+            flag = geometry_rules.judge_bond_order(mol,mole_bond_atom=[j],bond_to_basis=2)
+            if flag == 1:
+                tmp = geometry_rules.single_ad_structure(slab,mol,ad_site=site,mole_bond_index=[j])    
                 if not os.path.exists(obpath + "/" +formula ):
                     os.mkdir(obpath + "/" + formula)                 
                 #if compare_graph(compare_structure,tmp):
                 structure.append(tmp)
                 bridge_num+=1
     
-    for j in double_site: #双氮位点1
-            flag = get_smx_bond_order(mol,mole_bond_atom=j)
+    for j in double_site: #双位点
+            flag = geometry_rules.judge_bond_order(mol,mole_bond_atom=j)
             if flag == 1:
-                tmp=double_ad_structure(slab,mol,ad_site=site,mole_bond_atom=j)    
+                tmp = geometry_rules.double_ad_structure(slab,mol,ad_site=site,mole_bond_index=j)    
                 #if compare_graph(compare_structure,tmp):
                 structure.append(tmp)
                 double_num+=1
 
         
-    for j in double_cross_site:
-            flag = get_smx_bond_order(mol,mole_bond_atom=j)
+    for j in double_cross_site: #arc位点
+            flag = geometry_rules.judge_bond_order(mol,mole_bond_atom=j)
             if flag == 1:
-                tmp=double_cross_ad_structure(slab,mol,ad_site=site,mole_bond_atom=j,type="normal")       
+                tmp = geometry_rules.double_cross_ad_structure(slab,mol,ad_site=site,mole_bond_index=j,type="normal")       
                 #if compare_graph(compare_structure,tmp):
                 structure.append(tmp)
                 double_cross_num+=1    

@@ -1,8 +1,7 @@
 import networkx as nx
-from get_reaction_network import add_h,drop_oh,judge_coupling_3,get_reaction_network2
-from struc_to_graph import atom_to_graph
+from create_reaction_network import add_h,drop_oh,judge_coupling_3,get_reaction_network2
 from ase.io import read
-from default_func import get_neighbor_list,get_thermal_correction_from_vaspkit_output
+from basic_func import get_neighbor_list,get_thermal_correction_from_vaspkit_output,atom_to_graph
 import os
 import numpy as np
 
@@ -11,37 +10,37 @@ least_energy_file = '/homw/least_energy'
 
 reactnet_0210='/home/reactnet.txt'
 
-def generate_ad_graph(file_path):
+def generate_ad_graph(file_path):  #返回子图，即吸附界面上的小分子的图
     atoms = read(file_path)
     ad_list = []
     for index,atom in enumerate(atoms):
-        if index > 48:
+        if index > 48:   #序号大于48的原子为界面上的原子
             ad_list.append(index)    
-    neighbor_list = get_neighbor_list(atoms,0.001,1.25)
+    neighbor_list = get_neighbor_list(atoms,0.001,1.25)  #成键阈值为1.25
     full,ad_graph=atom_to_graph(atoms,neighbor_list,ad_atoms=ad_list)
     return ad_graph
 
 
-def create_total_graph(path):
+def create_total_graph(path):  #返回文件名、分子图和自由能
     total_graph=[]
     for file in os.listdir(path):
         file_path = path+'/'+file+'/'+'CONTCAR'
         ad_graph = generate_ad_graph(file_path)
         energy=0
-        if os.path.exists(path+"/"+file+"/scf/output.relax"):
+        if os.path.exists(path+"/"+file+"/scf/output.relax"):    #文件名后缀写错了，正常应该是.scf
             for line in open(path+"/"+file+"/scf/output.relax"):
                     if "1 F" in line:
                         energy=float(line.split()[4])
         else:  
-            for line in open(path+"/"+file+"/scf/output.scf"):
+            for line in open(path+"/"+file+"/scf/output.scf"):   
                     if "1 F" in line:
                         energy=float(line.split()[4])                          
-        thermal_correction=get_thermal_correction_from_vaspkit_output(path+"/"+file)
+        thermal_correction=get_thermal_correction_from_vaspkit_output(path+"/"+file) #零点能和熵校正
         free_energy=energy+thermal_correction        
         total_graph.append([file.split('-')[1],ad_graph,free_energy])
     return total_graph    
 
-def molecular_formula(before_formula):
+def molecular_formula(before_formula):  #把smiles变成最简分子式
     C_num=0
     H_num=0
     N_num=0
@@ -127,10 +126,10 @@ with open(reactnet_0210,'w') as f:
 
 
 # use reaction path
-cou_mod_path='/home/reactnet.txt'
+cou_mod_path='/home/reactnet.txt' #该文件存放反应网络包含的所有化学反应的反应物、产物、能量变化、反应类型信息
 path_energy_dict={}
 reaction_network=nx.DiGraph()
-pH_mod=0.4012
+pH_mod=0.4012  #ph=6.8对应的自由能校正
 with open(cou_mod_path,'r') as f:
     lines = f.readlines()
 for line in lines:
@@ -176,7 +175,7 @@ for line in lines:
             energy=round(path_energy_dict[pair],4)
             
             if energy>max_energy_tmp:
-                max_energy_tmp=energy
+                max_energy_tmp=energy  #决速步能量
             #abs_energy=abs(energy)
             if energy>0:
                 abs_energy=energy
@@ -193,19 +192,19 @@ for line in lines:
                 if total==1:
                     reaction_path_list=[path_str,max_energy_tmp,abs_energy_sum_tmp,eng_list]
                 else:
-                    if max_energy_tmp<reaction_path_list[1]:
+                    if max_energy_tmp<reaction_path_list[1]:  #通过不断排序找出决速步能量最低的反应路径
                         reaction_path_list=[path_str,max_energy_tmp,abs_energy_sum_tmp,eng_list]
                     elif max_energy_tmp==reaction_path_list[1]:
-                        if abs_energy_sum_tmp<reaction_path_list[2]:
+                        if abs_energy_sum_tmp<reaction_path_list[2]:  #若决速步能量相同，找出绝对值为正的反应步骤，其累加的自由能最小
                             reaction_path_list=[path_str,max_energy_tmp,abs_energy_sum_tmp,eng_list]
                 #reaction_path_list.append(tmp)
             else:
                 path_str+=j[1]+' -> '
                 count+=1  
                 eng_list.append(energy)
-    print(file)
-    print(str(total))
-    print(reaction_path_list[0])
-    print(reaction_path_list[1])
-    print(reaction_path_list[3])
+    print(file) #产物名称
+    print(str(total))  #某产物的反应路径数目
+    print(reaction_path_list[0])  #最优路径
+    print(reaction_path_list[1])  #决速步
+    print(reaction_path_list[3])  #最优路径每一步的能量
 

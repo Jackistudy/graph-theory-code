@@ -7,10 +7,8 @@ from numpy.linalg import norm
 from itertools import combinations
 import itertools
 import numpy as np
-from default_func import get_atomic_number
-from default_func import get_radicial,get_neighbor_list,get_thermal_correction_from_vaspkit_output,get_gas_thermal_correction_from_vaspkit_output
+from basic_func import get_neighbor_list,get_thermal_correction_from_vaspkit_output,atom_to_graph
 from ase.io import read,write
-from struc_to_graph import atom_to_graph
 import networkx as nx
 import os
 import networkx.algorithms.isomorphism as iso
@@ -19,6 +17,7 @@ import networkx.algorithms.isomorphism as iso
 bond_match = iso.categorical_edge_match('bond','')  #graph要比较的属性，属性的默认值
 ads_match = iso.categorical_node_match(['symbol'], [-1, False])
 
+#CONH的形成能，H用H2的自由能来计算，O用H2O的自由能来计算，C用CO2的自由能来计算，N用NO2的自由能来计算
 c_form=-8.6789 
 o_form=-7.3178 
 h_form=-3.4587 
@@ -137,7 +136,7 @@ def get_reaction_network2(total_file):
                 flag=add_h(ad_graph_1,ad_graph_2)
                 #print(flag)
                 if flag==1:
-                    det_e=k[2]-i[2]+3.4587 
+                    det_e=k[2]-i[2]+3.4587 #H的能量
                     #print("{}+H>{} det_e={}".format(i[0], k[0],det_e))  
                     tmpedge=[(i[0],k[0],{"deltE":det_e,"type":"add_H"})]
                     file_list.append('{},{},{},add_H'.format(i[0],k[0],det_e))
@@ -148,7 +147,7 @@ def get_reaction_network2(total_file):
                 if flag==0:
                     flag=drop_oh(ad_graph_1,ad_graph_2)
                     if flag==1:
-                        det_e=k[2]-i[2]-10.77647575 
+                        det_e=k[2]-i[2]-10.77647575 #OH的能量
                         #print("{}+H>{}+H2O   det_e={}".format(i[0], k[0],det_e))
                         tmpedge=[(i[0],k[0],{"deltE":det_e,"type":"drop_H2O"})]
                         file_list.append('{},{},{},drop_H2O'.format(i[0],k[0],det_e))
@@ -166,7 +165,7 @@ def get_reaction_network2(total_file):
 
                         gas_fomation_e=0
                         gas_node=[i[2] for i in couple_part.nodes]
-                        for node in gas_node:
+                        for node in gas_node:  #N源的能量用形成能来计算
                             if node=="N":
                                 gas_fomation_e+=n_form
                             if node=="O":

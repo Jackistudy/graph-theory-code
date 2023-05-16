@@ -14,9 +14,8 @@ import scipy
 from ase.neighborlist import NeighborList, natural_cutoffs
 from numpy.linalg import norm
 from itertools import combinations
-#from default_func import graphstruc
 import itertools
-from default_func import get_radicial,get_radii,get_atomic_number
+from basic_func import get_radii
 import math
 
 
